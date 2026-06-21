@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IA APASU</title>
+<style>
+  :root{
+    --cream:#FBF8F2;
+    --ink:#2B2440;
+    --violet:#6B4FA0;
+    --turquoise:#2FA9A0;
+    --coral:#E8704F;
+    --sun:#F0B429;
+    --leaf:#5BA85A;
+    --line:#E3DCCB;
+    --panel:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Segoe UI', Verdana, Arial, sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{ max-width:1100px; margin:0 auto; padding:0 20px 60px; }
+
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:22px 0 18px;
+    border-bottom:3px solid var(--line);
+    margin-bottom:26px;
+  }
+  .logo-ring{
+    width:46px;height:46px;border-radius:50%;
+    background:conic-gradient(from 0deg, var(--coral), var(--sun), var(--leaf), var(--turquoise), var(--violet), var(--coral));
+    position:relative; flex-shrink:0;
+  }
+  .logo-ring::after{
+    content:"";
+    position:absolute; inset:9px;
+    background:var(--cream); border-radius:50%;
+  }
+  .brand h1{ font-size:22px; margin:0; letter-spacing:-0.01em; }
+  .brand p{ margin:2px 0 0; font-size:13px; color:#6b6480; }
+
+  .tabs{
+    display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;
+  }
+  .tab{
+    border:2px solid var(--line); background:var(--panel);
+    border-radius:14px; padding:12px 16px;
+    display:flex; align-items:center; gap:10px;
+    cursor:pointer; font-size:14px; font-weight:600; color:var(--ink);
+    transition:all .15s ease; flex:1; min-width:160px;
+  }
+  .tab:hover{ border-color:var(--violet); transform:translateY(-1px); }
+  .tab.active{ background:var(--ink); border-color:var(--ink); color:white; }
+  .tab .dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; display:inline-block; }
+
+  .panel{
+    background:var(--panel); border:2px solid var(--line);
+    border-radius:18px; padding:28px;
+  }
+  .panel h2{ margin:0 0 4px; font-size:19px; }
+  .panel .sub{ margin:0 0 22px; font-size:14px; color:#6b6480; }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .chip-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:10px; margin-bottom:20px;
+  }
+  .chip{
+    border:2px solid var(--line); border-radius:12px; padding:14px;
+    cursor:pointer; background:#FDFCF8; text-align:left;
+    font-size:13.5px; font-weight:600; color:var(--ink);
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .chip:hover{ border-color:var(--turquoise); background:#F0FAF9; }
+  .chip span{ font-weight:400; font-size:12px; color:#7a7390; }
+
+  textarea, input[type=text]{
+    width:100%; border:2px solid var(--line); border-radius:12px;
+    padding:13px 14px; font-size:14.5px; font-family:inherit;
+    resize:vertical; background:#FDFCF8;
+  }
+  textarea:focus, input:focus{ outline:none; border-color:var(--violet); }
+
+  .btn{
+    border:none; border-radius:12px; padding:13px 22px;
+    font-weight:700; font-size:14.5px; cursor:pointer;
+    background:var(--violet); color:white;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn:hover{ background:#5a4189; }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn.secondary{ background:transparent; color:var(--ink); border:2px solid var(--line); }
+  .btn.secondary:hover{ border-color:var(--ink); background:transparent; }
+
+  .row{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+
+  .output{
+    margin-top:20px; background:#FBF8F2; border:2px dashed var(--line);
+    border-radius:14px; padding:20px; white-space:pre-wrap;
+    font-size:14.5px; line-height:1.65;
+  }
+  .output.empty{ color:#a39cb5; font-style:italic; }
+  .loading{ display:flex; align-items:center; gap:10px; color:#7a7390; font-size:14px; }
+  .spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--violet);
+    animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .chat-window{
+    background:#FDFCF8; border:2px solid var(--line); border-radius:14px;
+    padding:16px; height:420px; overflow-y:auto; margin-bottom:14px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .msg{ max-width:80%; padding:11px 15px; border-radius:14px; font-size:14.5px; line-height:1.55; white-space:pre-wrap; }
+  .msg.user{ align-self:flex-end; background:var(--violet); color:white; border-radius:14px 14px 4px 14px; }
+  .msg.bot{ align-self:flex-start; background:white; border:2px solid var(--line); border-radius:14px 14px 14px 4px; }
+  .chat-input-row{ display:flex; gap:10px; }
+  .chat-input-row input{ flex:1; }
+
+  .suggestions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .sugg{
+    border:1.5px solid var(--line); background:white; border-radius:999px;
+    padding:7px 14px; font-size:12.5px; cursor:pointer; color:#564f73;
+  }
+  .sugg:hover{ border-color:var(--turquoise); color:var(--turquoise); }
+
+  .seq-list{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .seq-step{
+    display:flex; align-items:flex-start; gap:14px;
+    background:#FDFCF8; border:2px solid var(--line); border-radius:14px;
+    padding:14px 16px;
+  }
+  .seq-step .num{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:14px; color:white;
+  }
+  .seq-step .icon{ font-size:26px; flex-shrink:0; line-height:1; margin-top:2px; }
+  .seq-step .text{ font-size:15px; font-weight:600; line-height:1.4; padding-top:4px; }
+
+  .disclaimer-box{
+    background:#FFF7E8; border:2px solid #F0DBA0; border-radius:12px;
+    padding:12px 16px; font-size:12.5px; color:#7a5d12; margin-top:18px;
+    line-height:1.5;
+  }
+
+  .arasaac-credit{
+    font-size:11.5px; color:#9b94ad; margin-top:14px; text-align:right;
+  }
+  .arasaac-credit a{ color:#6b6480; }
+
+  .source-toggle{
+    display:flex; gap:8px; margin-bottom:16px;
+  }
+  .source-btn{
+    border:1.5px solid var(--line); background:white; border-radius:10px;
+    padding:8px 14px; font-size:12.5px; font-weight:600; cursor:pointer; color:#7a7390;
+  }
+  .source-btn.active{ background:var(--ink); border-color:var(--ink); color:white; }
+
+  .error-box{
+    background:#FDECEA; border:2px solid #F2B8B0; border-radius:12px;
+    padding:14px 16px; font-size:13.5px; color:#9a2e22; margin-top:16px; line-height:1.5;
+  }
+
+  @media print{
+    .tabs,.topbar,.chip-grid,.row,.disclaimer-box,.chat-input-row,.suggestions{ display:none !important; }
+    .panel{ border:none; }
+  }
+  @media (max-width:640px){
+    .tab{ min-width:100%; }
+    .panel{ padding:18px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="logo-ring"></div>
+    <div class="brand">
+      <h1>IA APASU</h1>
+      <p>Assistent intern per a la junta i el personal</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="gestio" onclick="showTab('gestio')">
+      <span class="dot" style="background:#6B4FA0"></span>Gestió
+    </button>
+    <button class="tab" data-tab="families" onclick="showTab('families')">
+      <span class="dot" style="background:#2FA9A0"></span>Famílies
+    </button>
+    <button class="tab" data-tab="agenda" onclick="showTab('agenda')">
+      <span class="dot" style="background:#E8704F"></span>Agenda Visual TEA
+    </button>
+  </div>
+
+  <div class="panel">
+
+    <!-- GESTIÓ -->
+    <div class="view active" id="view-gestio">
+      <h2>Ajuda a gestió</h2>
+      <p class="sub">Tria una plantilla o escriu directament què necessites.</p>
+      <div class="chip-grid" id="gestio-chips"></div>
+      <textarea id="gestio-input" rows="4" placeholder="Ex: Redacta un comunicat anunciant que el dijous que ve hi haurà taller de musicoteràpia a les 17h..."></textarea>
+      <div class="row">
+        <button class="btn" id="gestio-btn" onclick="gestioGenerate()">Generar text</button>
+        <button class="btn secondary" id="gestio-copy" style="display:none" onclick="copyText('gestio-output')">Copiar</button>
+      </div>
+      <div id="gestio-status"></div>
+      <div class="output empty" id="gestio-output">Ací apareixerà el text generat.</div>
+    </div>
+
+    <!-- FAMÍLIES -->
+    <div class="view" id="view-families">
+      <h2>Ajuda a famílies</h2>
+      <p class="sub">Simulador de l'assistent que veuran les famílies des del portal de socis.</p>
+      <div class="suggestions" id="families-suggestions"></div>
+      <div class="chat-window" id="chat-window"></div>
+      <div class="chat-input-row">
+        <input type="text" id="families-input" placeholder="Escriu la teua pregunta..." onkeydown="if(event.key==='Enter') familiesSend();">
+        <button class="btn" onclick="familiesSend()">Enviar</button>
+      </div>
+      <div class="disclaimer-box">
+        Avís: este assistent dona informació general d'orientació. Per a qüestions mèdiques, diagnòstiques o terapèutiques sobre el TEA, consulta sempre amb professionals especialitzats o amb l'equip d'APASU.
+      </div>
+    </div>
+
+    <!-- AGENDA VISUAL -->
+    <div class="view" id="view-agenda">
+      <h2>Agenda Visual TEA</h2>
+      <p class="sub">Genera seqüències pas a pas en lectura fàcil per a anticipar activitats.</p>
+      <div class="source-toggle">
+        <button class="source-btn active" id="src-arasaac" onclick="toggleSource(true)">🖼️ Pictogrames ARASAAC</button>
+        <button class="source-btn" id="src-emoji" onclick="toggleSource(false)">😀 Emojis (més ràpid)</button>
+      </div>
+      <div class="suggestions" id="agenda-suggestions"></div>
+      <textarea id="agenda-input" rows="2" placeholder="Ex: Anar al metge, eixida a la piscina, dinar al restaurant..."></textarea>
+      <div class="row">
+        <button class="btn" id="agenda-btn" onclick="agendaGenerate()">Crear seqüència visual</button>
+        <button class="btn secondary" id="agenda-print" style="display:none" onclick="window.print()">Imprimir / Exportar PDF</button>
+      </div>
+      <div id="agenda-status"></div>
+      <div id="agenda-result"></div>
+      <div class="disclaimer-box">
+        Les seqüències generades són una ajuda d'anticipació general. Revisa-les i adapta-les sempre a cada persona abans d'utilitzar-les.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---------- TABS ----------
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+}
+
+// ---------- API (via Cloudflare Worker -> Gemini) ----------
+const WORKER_URL = "https://ia-apasu-proxy.associacioapasu.workers.dev";
+
+async function callClaude(prompt, system) {
+  const response = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, system }),
+  });
+  if (!response.ok) throw new Error("HTTP " + response.status);
+  const data = await response.json();
+  if (data.error) throw new Error(data.error);
+  return (data.text || "").trim() || "No s'ha pogut generar resposta. Torna a intentar-ho.";
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ---------- GESTIÓ ----------
+const GESTIO_PROMPTS = [
+  { label: "Comunicat per a famílies", desc: "Avís o nota informativa", template: "Redacta un comunicat breu i clar en valencià per a les famílies sòcies d'APASU sobre: " },
+  { label: "Correu formal", desc: "A entitats, ajuntament, etc.", template: "Redacta un correu formal en valencià, en nom d'APASU (Associació de Pares d'Autisme de Sueca), dirigit a: " },
+  { label: "Resum d'acta", desc: "A partir de notes de reunió", template: "Resumeix en valencià, en format d'acta clara amb punts clau i acords, la següent reunió: " },
+  { label: "Text per a activitat", desc: "Descripció promocional", template: "Crea un text breu i atractiu en valencià per a promocionar la següent activitat d'APASU: " },
+  { label: "Ajuda amb subvenció", desc: "Memòria o justificació", template: "Ajuda'm a redactar en valencià un fragment de memòria/justificació de subvenció sobre: " },
+  { label: "Informe d'activitats", desc: "Resum per a junta o sòcies", template: "Redacta en valencià un informe breu d'activitats realitzades per APASU sobre: " },
+];
+
+function renderGestioChips() {
+  const container = document.getElementById('gestio-chips');
+  container.innerHTML = GESTIO_PROMPTS.map((p, i) =>
+    `<button class="chip" onclick="useGestioTemplate(${i})">${escapeHtml(p.label)}<span>${escapeHtml(p.desc)}</span></button>`
+  ).join('');
+}
+function useGestioTemplate(i) {
+  document.getElementById('gestio-input').value = GESTIO_PROMPTS[i].template;
+  document.getElementById('gestio-input').focus();
+}
+
+async function gestioGenerate() {
+  const input = document.getElementById('gestio-input').value.trim();
+  if (!input) return;
+  const btn = document.getElementById('gestio-btn');
+  const status = document.getElementById('gestio-status');
+  const output = document.getElementById('gestio-output');
+  const copyBtn = document.getElementById('gestio-copy');
+  btn.disabled = true; btn.textContent = "Generant…";
+  copyBtn.style.display = 'none';
+  status.innerHTML = '<div class="loading"><div class="spinner"></div>Redactant...</div>';
+  output.textContent = ''; output.classList.add('empty');
+  try {
+    const result = await callClaude(
+      input,
+      "Ets l'assistent de gestió de l'APASU (Associació de Pares d'Autisme de Sueca). Escrius sempre en valencià/català, amb to professional, càlid i clar. Produeixes textos llestos per a usar (comunicats, correus, resums d'acta, informes), ben estructurats, sense preàmbuls innecessaris."
+    );
+    output.textContent = result;
+    output.classList.remove('empty');
+    copyBtn.style.display = 'inline-flex';
+    status.innerHTML = '';
+  } catch (e) {
+    status.innerHTML = '<div class="error-box">Error de connexió: ' + escapeHtml(e.message) + '. Torna a intentar-ho.</div>';
+    output.textContent = 'Ací apareixerà el text generat.';
+    output.classList.add('empty');
+  }
+  btn.disabled = false; btn.textContent = "Generar text";
+}
+
+function copyText(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+// ---------- FAMÍLIES ----------
+const FAMILIES_SUGGESTIONS = [
+  "Com m'inscric a una activitat?",
+  "On veig el calendari d'activitats?",
+  "Com pague la quota?",
+  "Què és el TEA?",
+];
+let chatHistory = [];
+
+function renderFamiliesSuggestions() {
+  const container = document.getElementById('families-suggestions');
+  container.innerHTML = FAMILIES_SUGGESTIONS.map((s, i) =>
+    `<button class="sugg" onclick="familiesSend('${escapeHtml(s).replace(/'/g, "\\'")}')">${escapeHtml(s)}</button>`
+  ).join('');
+}
+
+function addChatMessage(role, text) {
+  const win = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+  return div;
+}
+
+function initChat() {
+  addChatMessage('bot', "Hola! Soc l'assistent d'APASU. Pregunta'm el que necessites sobre l'associació, activitats o dubtes generals.");
+}
+
+async function familiesSend(presetText) {
+  const inputEl = document.getElementById('families-input');
+  const msg = (presetText !== undefined ? presetText : inputEl.value).trim();
+  if (!msg) return;
+  inputEl.value = '';
+  addChatMessage('user', msg);
+  chatHistory.push({ role: 'user', text: msg });
+
+  const loadingDiv = addChatMessage('bot', '');
+  loadingDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Escrivint...</div>';
+
+  try {
+    const historyText = chatHistory.map(m => (m.role === 'user' ? 'Família: ' : 'Assistent: ') + m.text).join('\n');
+    const reply = await callClaude(
+      historyText + '\nAssistent:',
+      "Ets l'assistent d'atenció a famílies de l'APASU (Associació de Pares d'Autisme de Sueca, ubicada a Sueca, País Valencià). Respons en valencià, de manera breu, càlida i clara, sobre dubtes generals de l'associació: inscripcions a activitats, horaris, quotes, ús de l'app/portal de socis, i informació general orientativa sobre el TEA. MOLT IMPORTANT: si la pregunta és sobre informació mèdica, diagnòstica o terapèutica específica del TEA, dona només informació general orientativa i sempre acaba recordant que cal consultar amb professionals especialitzats (psicòlegs, terapeutes, equips de l'associació), ja que no els pots substituir. No inventes dades concretes (preus exactes, dates exactes) si no les tens; en eixe cas, indica que cal confirmar-ho amb la junta o secretaria d'APASU."
+    );
+    loadingDiv.innerHTML = '';
+    loadingDiv.textContent = reply;
+    chatHistory.push({ role: 'bot', text: reply });
+  } catch (e) {
+    loadingDiv.innerHTML = '';
+    loadingDiv.textContent = "Hi ha hagut un error de connexió. Torna a intentar-ho.";
+  }
+}
+
+// ---------- AGENDA VISUAL ----------
+const AGENDA_EXAMPLES = ["Anar al cine inclusiu", "Visita al dentista", "Primer dia d'escola", "Eixida a la platja"];
+const STEP_COLORS = ["#E8704F","#F0B429","#5BA85A","#2FA9A0","#6B4FA0"];
+const ICON_POOL = ["🚪","🚶","🎫","🪑","👀","🚗","🏠","✋","🗣️","⏰","🧴","🍽️","🛁","📖","🎒","😊","🚌","🏫","🎶","🖼️"];
+
+// ---- Biblioteca local de pictogrames ARASAAC (cache de favorits) ----
+const PICTO_CACHE_KEY = "apasu_pictos_cache_v1";
+function getPictoCache() {
+  try { return JSON.parse(localStorage.getItem(PICTO_CACHE_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function savePictoCache(cache) {
+  try { localStorage.setItem(PICTO_CACHE_KEY, JSON.stringify(cache)); } catch (e) {}
+}
+function normalizeWord(w) {
+  return w.toLowerCase().trim().replace(/[.,!?]/g, "");
+}
+
+// Busca el pictograma real a l'API d'ARASAAC; usa la cache local si ja existeix
+async function fetchPictoForWord(word) {
+  const key = normalizeWord(word);
+  const cache = getPictoCache();
+  if (cache[key]) return cache[key];
+
+  try {
+    const res = await fetch(`https://api.arasaac.org/api/pictograms/ca/bestsearch/${encodeURIComponent(key)}`);
+    if (!res.ok) throw new Error("ARASAAC " + res.status);
+    const results = await res.json();
+    if (!results || !results.length) return null;
+    const id = results[0]._id;
+    const url = `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
+    cache[key] = { id, url };
+    savePictoCache(cache);
+    return cache[key];
+  } catch (e) {
+    return null;
+  }
+}
+
+// Tria les paraules candidates d'un pas, de més a menys específica (les més llargues primer)
+function keywordFromStep(stepText) {
+  const stopwords = ["amb","per","una","uns","les","els","del","dels","de","la","el","i","a","al","en","que","molt","ja","es"];
+  const words = stepText.toLowerCase().replace(/[.,!?]/g, "").split(/\s+/).filter(w => w.length > 2 && !stopwords.includes(w));
+  return words.sort((a, b) => b.length - a.length);
+}
+
+function renderAgendaSuggestions() {
+  const container = document.getElementById('agenda-suggestions');
+  container.innerHTML = AGENDA_EXAMPLES.map(s =>
+    `<button class="sugg" onclick="agendaGenerate('${escapeHtml(s).replace(/'/g, "\\'")}')">${escapeHtml(s)}</button>`
+  ).join('');
+}
+
+function pickIcon(stepText, idx) {
+  const t = stepText.toLowerCase();
+  if (t.includes("arrib")) return "🚶";
+  if (t.includes("cua")) return "🧍";
+  if (t.includes("qr") || t.includes("entrada") || t.includes("tiquet")) return "🎫";
+  if (t.includes("entr")) return "🚪";
+  if (t.includes("seu") || t.includes("seiem") || (t.includes("se") && t.includes("sala"))) return "🪑";
+  if (t.includes("mir") || t.includes("pel·lícula") || t.includes("pelicula")) return "🎬";
+  if (t.includes("torn") || t.includes("casa")) return "🏠";
+  if (t.includes("menj")) return "🍽️";
+  if (t.includes("dorm") || t.includes("dutxa") || t.includes("bany")) return "🛁";
+  if (t.includes("cotxe") || t.includes("autobús") || t.includes("autobus")) return "🚌";
+  if (t.includes("escola") || t.includes("classe")) return "🏫";
+  return ICON_POOL[idx % ICON_POOL.length];
+}
+
+let usePictograms = true;
+
+function toggleSource(useArasaac) {
+  usePictograms = useArasaac;
+  document.getElementById('src-arasaac').classList.toggle('active', useArasaac);
+  document.getElementById('src-emoji').classList.toggle('active', !useArasaac);
+}
+
+async function agendaGenerate(presetText) {
+  const inputEl = document.getElementById('agenda-input');
+  const topic = (presetText !== undefined ? presetText : inputEl.value).trim();
+  if (!topic) return;
+  if (presetText !== undefined) inputEl.value = topic;
+
+  const btn = document.getElementById('agenda-btn');
+  const status = document.getElementById('agenda-status');
+  const result = document.getElementById('agenda-result');
+  const printBtn = document.getElementById('agenda-print');
+  btn.disabled = true; btn.textContent = "Creant seqüència…";
+  printBtn.style.display = 'none';
+  status.innerHTML = '<div class="loading"><div class="spinner"></div>Preparant els passos...</div>';
+  result.innerHTML = '';
+
+  try {
+    const raw = await callClaude(
+      `Crea una seqüència visual pas a pas, en lectura fàcil, en valencià, per a l'activitat: "${topic}". Cada pas ha de ser una frase molt curta (màxim 6 paraules), en present, amb llenguatge senzill i concret, pensat per a persones amb TEA. Genera entre 6 i 9 passos, des de l'inici fins al final de l'activitat (incloent tornar a casa o acabar). Respon NOMÉS amb una llista, un pas per línia, sense numeració, sense guions, sense cap text addicional ni explicacions.`,
+      "Ets un especialista en suport visual i agendes anticipatòries per a persones amb TEA (Trastorn de l'Espectre Autista), treballant per a APASU. Respons sempre en valencià, amb frases curtíssimes i lectura fàcil."
+    );
+    const lines = raw.split("\n").map(l => l.replace(/^[-•\d.\)]+\s*/, "").trim()).filter(Boolean);
+
+    let html = `<h2 style="margin-top:26px">${escapeHtml(topic)}</h2><div class="seq-list">`;
+    lines.forEach((s, i) => {
+      html += `<div class="seq-step" id="seq-step-${i}">
+        <div class="num" style="background:${STEP_COLORS[i % STEP_COLORS.length]}">${i + 1}</div>
+        <div class="icon" id="seq-icon-${i}">${pickIcon(s, i)}</div>
+        <div class="text">${escapeHtml(s)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+    if (usePictograms) {
+      html += `<div class="arasaac-credit">Pictogrames de <a href="https://arasaac.org" target="_blank" rel="noopener">ARASAAC</a> (Sergio Palao / Govern d'Aragó), llicència CC BY-NC-SA.</div>`;
+    }
+    result.innerHTML = html;
+    printBtn.style.display = 'inline-flex';
+    status.innerHTML = '';
+
+    // Si toca, busca pictogrames reals d'ARASAAC per a cada pas (provant diverses paraules candidates si calen)
+    if (usePictograms) {
+      lines.forEach(async (s, i) => {
+        const candidates = keywordFromStep(s);
+        const iconEl = document.getElementById(`seq-icon-${i}`);
+        const fallbackEmoji = pickIcon(s, i);
+        let picto = null;
+        for (const w of candidates) {
+          picto = await fetchPictoForWord(w);
+          if (picto) break;
+        }
+        if (picto && iconEl) {
+          iconEl.innerHTML = `<img src="${picto.url}" alt="${escapeHtml(s)}" style="width:48px;height:48px;object-fit:contain;" onerror="this.parentElement.textContent='${fallbackEmoji}'">`;
+        }
+        // si no troba cap coincidència, es queda l'emoji ja posat
+      });
+    }
+  } catch (e) {
+    status.innerHTML = '<div class="error-box">Error de connexió: ' + escapeHtml(e.message) + '. Torna a intentar-ho.</div>';
+  }
+  btn.disabled = false; btn.textContent = "Crear seqüència visual";
+}
+
+// ---------- INIT ----------
+renderGestioChips();
+renderFamiliesSuggestions();
+renderAgendaSuggestions();
+initChat();
+</script>
+</body>
+</html>
