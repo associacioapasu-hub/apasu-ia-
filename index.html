@@ -416,20 +416,18 @@ function normalizeWord(w) {
   return w.toLowerCase().trim().replace(/[.,!?]/g, "");
 }
 
-// Busca el pictograma real a l'API d'ARASAAC; usa la cache local si ja existeix
+// Busca el pictograma real a ARASAAC, a través del nostre Worker (evita CORS); usa la cache local si ja existeix
 async function fetchPictoForWord(word) {
   const key = normalizeWord(word);
   const cache = getPictoCache();
   if (cache[key]) return cache[key];
 
   try {
-    const res = await fetch(`https://api.arasaac.org/api/pictograms/ca/bestsearch/${encodeURIComponent(key)}`);
-    if (!res.ok) throw new Error("ARASAAC " + res.status);
-    const results = await res.json();
-    if (!results || !results.length) return null;
-    const id = results[0]._id;
-    const url = `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
-    cache[key] = { id, url };
+    const res = await fetch(`${WORKER_URL}/picto?word=${encodeURIComponent(key)}`);
+    if (!res.ok) throw new Error("Worker " + res.status);
+    const data = await res.json();
+    if (!data.picto) return null;
+    cache[key] = data.picto;
     savePictoCache(cache);
     return cache[key];
   } catch (e) {
